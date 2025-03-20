@@ -68,6 +68,26 @@ def envia_mensagem(peer, tipo):
     peer_socket.close()
 
 
+# Função de listar peers
+def listar_peers():
+    print("[0] voltar para o menu anterior")
+    for peer in lista_vizinhos:
+        print(f"{peer.IP}:{peer.PORTA} {peer.STATUS}")
+
+    opt = int(input())
+
+    if opt == 0: return
+    elif opt < len(lista_vizinhos): envia_mensagem(lista_vizinhos[opt - 1], "HELLO")
+    else:
+        print("Opção invalida")
+        return
+
+if opcao == 1:
+    listar_peers()
+elif opcao == 7:
+    sys.exit()
+
+
 
 
 
