@@ -1,5 +1,7 @@
+import os
 import sys
 import socket
+from pathlib import Path
 
 if len(sys.argv) != 4:
     print("Uso correto: python3 <nome>.py <endereço>:<porta> <vizinhos.txt> <diretório_compartilhado>")
@@ -27,4 +29,13 @@ with open(vizinhos, "r") as arquivo:
     for linha in arquivo:
         print(f"Adicionando novo peer {linha} status OFFLINE")
         lista_vizinhos.append(Peer(linha.split(":")[0], linha.split(":")[1], "OFFLINE"))
+
+#Verifica se o diretório de compartilhamento é um diretório válido e pode ser lido.
+caminho_diretorio = Path(diretorio_compartilhado)
+
+if not caminho_diretorio.is_dir() or not os.access(caminho_diretorio, os.R_OK):
+    print(f"Erro: '{diretorio_compartilhado}' não é um diretório válido ou não pode ser lido.")
+    sys.exit(1)
+
+
 
