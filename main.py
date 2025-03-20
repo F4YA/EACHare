@@ -12,6 +12,7 @@ IP = sys.argv[1].split(":")[0]
 PORTA = int(sys.argv[1].split(":")[1])
 vizinhos = sys.argv[2]
 diretorio_compartilhado = sys.argv[3]
+clock = 0
 
 #Criando o socket TCP conforme especificado em 2.3 EP: parte 1
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -51,6 +52,20 @@ server_thread.start()
 threading.Event().wait(1)
 
 opcao = int(input("Escolha um comando:\n [1] Listar peers \n [2] Obter peers \n [3] Listar arquivos locais \n [4] Buscar arquivos \n [5] Exibir estatísticas \n [6] Alterar tamanho de chunk \n [7] Sair \n opcao: "))
+
+# Função de enviar mensagem para os peers como especificado em 2.1 - EP: Parte 1
+def envia_mensagem(peer, tipo):
+
+    peer_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    peer_socket.connect((peer.IP, peer.PORTA))
+
+    # <ORIGEM> <CLOCK> <TIPO> [ARGUMENTO 1 ARGUMENTO 2]
+    mensagem = f"{IP}:{PORTA} {clock} {tipo}"
+    peer_socket.send(mensagem.encode())
+
+    print(f"Encaminhando mensagem {mensagem} para {peer.IP}:{peer.PORTA}")
+
+    peer_socket.close()
 
 
 
