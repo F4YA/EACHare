@@ -55,26 +55,33 @@ opcao = int(input("Escolha um comando:\n [1] Listar peers \n [2] Obter peers \n 
 
 # Função de enviar mensagem para os peers como especificado em 2.1 - EP: Parte 1
 def envia_mensagem(peer, tipo):
-
-    peer_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    peer_socket.connect((peer.IP, peer.PORTA))
-
-    # <ORIGEM> <CLOCK> <TIPO> [ARGUMENTO 1 ARGUMENTO 2]
-    mensagem = f"{IP}:{PORTA} {clock} {tipo}"
-    peer_socket.send(mensagem.encode())
-
-    print(f"Encaminhando mensagem {mensagem} para {peer.IP}:{peer.PORTA}")
+    try:
+        peer_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        peer_socket.connect((peer.IP, int(peer.PORTA)))
+        # <ORIGEM> <CLOCK> <TIPO> [ARGUMENTO 1 ARGUMENTO 2]
+        mensagem = f"{IP}:{PORTA} {clock} {tipo}"
+        peer_socket.send(mensagem.encode())
+        print(f"Encaminhando mensagem {mensagem} para {peer.IP}:{peer.PORTA}")
+    except Exception as e:
+        print(f"Erro ao enviar mensagem {e}")
+        peer_socket.close()
+        peer.STATUS = "OFFLINE"
+        print(f"Atualizando peer {peer.IP}:{peer.PORTA} status {peer.STATUS}")
+    else:
+        peer.STATUS = "ONLINE"
+        print(f"Atualizando peer {peer.IP}:{peer.PORTA} status {peer.STATUS}")
 
     peer_socket.close()
-
 
 # Função de listar peers
 def listar_peers():
     print("[0] voltar para o menu anterior")
+    i = 1
     for peer in lista_vizinhos:
-        print(f"{peer.IP}:{peer.PORTA} {peer.STATUS}")
+        print(f"[{i}] {peer.IP}:{peer.PORTA} {peer.STATUS}")
+        i = i + 1
 
-    opt = int(input())
+    opt = int(input("> "))
 
     if opt == 0: return
     elif opt < len(lista_vizinhos): envia_mensagem(lista_vizinhos[opt - 1], "HELLO")
@@ -86,6 +93,7 @@ if opcao == 1:
     listar_peers()
 elif opcao == 7:
     sys.exit()
+
 
 
 
