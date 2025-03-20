@@ -14,4 +14,17 @@ diretorio_compartilhado = sys.argv[3]
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.bind((IP, PORTA))
 
+#Parte que adiciona os peers do arquivo vizinhos.txt e apresenta saída solicitada conforme 2.3 EP: parte 1
+class Peer:
+    def __init__(self, IP, PORTA, status):
+        self.IP = IP
+        self.PORTA = PORTA
+        self.STATUS = status
+
+lista_vizinhos = []
+
+with open(vizinhos, "r") as arquivo:
+    for linha in arquivo:
+        print(f"Adicionando novo peer {linha} status OFFLINE")
+        lista_vizinhos.append(Peer(linha.split(":")[0], linha.split(":")[1], "OFFLINE"))
 
