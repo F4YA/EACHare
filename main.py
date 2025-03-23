@@ -58,6 +58,7 @@ def bye_req(origem):
         if peer.IP == origem and peer.PORTA == PORTA:
             peer.STATUS = "OFFLINE"
             print(f"Atualizando peer {peer.IP}:{peer.PORTA} status {peer.STATUS}")
+            break
 
 #Função que lida com a requisição do cliente
 def tratar_req(req):
@@ -141,10 +142,15 @@ def sair():
     server_thread.join()
     sys.exit()
 
+def obter_peers():
+    for peer in lista_vizinhos:
+        envia_mensagem(peer, "GET_PEERS")
+
+
 if opcao == 1:
     listar_peers()
 elif opcao == 7:
-    sys.exit()
+    sair()
 
 
 
