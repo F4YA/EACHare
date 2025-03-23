@@ -10,8 +10,8 @@ if len(sys.argv) != 4:
 
 IP = sys.argv[1].split(":")[0]
 PORTA = int(sys.argv[1].split(":")[1])
-vizinhos = sys.argv[2]
-diretorio_compartilhado = sys.argv[3]
+VIZINHOS = sys.argv[2]
+DIRETORIO = sys.argv[3]
 clock = 0
 
 #Criando o socket TCP conforme especificado em 2.3 EP: parte 1
@@ -27,17 +27,32 @@ class Peer:
 
 lista_vizinhos = []
 
-with open(vizinhos, "r") as arquivo:
+with open(VIZINHOS, "r") as arquivo:
     for linha in arquivo:
         print(f"Adicionando novo peer {linha} status OFFLINE")
         lista_vizinhos.append(Peer(linha.split(":")[0], linha.split(":")[1], "OFFLINE"))
 
 #Verifica se o diretório de compartilhamento é um diretório válido e pode ser lido.
-caminho_diretorio = Path(diretorio_compartilhado)
+caminho_diretorio = Path(DIRETORIO)
 
 if not caminho_diretorio.is_dir() or not os.access(caminho_diretorio, os.R_OK):
-    print(f"Erro: '{diretorio_compartilhado}' não é um diretório válido ou não pode ser lido.")
+    print(f"Erro: '{DIRETORIO}' não é um diretório válido ou não pode ser lido.")
     sys.exit(1)
+
+def hello_req(new_peer):
+    ip = new_peer.split(":")[0]
+    porta = int(new_peer.split(":")[1])
+
+    for peer in lista_vizinhos:
+        if peer.IP == ip and peer.PORTA == porta:
+            peer.STATUS = "ONLINE"
+            print(f"Atualizando peer {peer.IP}:{peer.PORTA} status {peer.STATUS}")
+            return
+
+    peer = Peer(ip, porta, "ONLINE")
+    print(f"Atualizando peer {peer.IP}:{peer.PORTA} status {peer.STATUS}")
+    lista_vizinhos.append(peer)
+
 
 #Função que lida com a requisição do cliente
 def tratar_req(req):
@@ -47,6 +62,15 @@ def tratar_req(req):
             if not data:
                 break
             print("Mensagem recebida: ", data)
+
+            origem: str = data.split(" ")[0]
+            tipo = data.split(" ")[2]
+            args = data.split(" ")[3]
+
+            print(origem, tipo, args)
+
+            if(tipo == "HELLO"): hello_req(origem)
+
         except:
             break
     req.close()
