@@ -56,6 +56,11 @@ def inicia_server():
     server.listen()
     print(f"Servidor iniciado {IP}:{PORTA}")
 
+    while True:
+        req, addr = server.accept()
+        cliente_thread = threading.Thread(target=tratar_req, args=(req,))
+        cliente_thread.start()
+
 
 server_thread = threading.Thread(target=inicia_server)
 server_thread.daemon = True
