@@ -78,6 +78,7 @@ def tratar_req(req):
                 args = data[3]
 
             if(tipo == "HELLO"): hello_req(origem)
+            elif(tipo == "BYE"): bye_req(origem)
 
         except:
             break
