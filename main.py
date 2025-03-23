@@ -64,16 +64,18 @@ def bye_req(origem):
 def tratar_req(req):
     while True:
         try:
-            data = req.recv(1024)
+            data = req.recv(1024).decode()
             if not data:
                 break
             print("Mensagem recebida: ", data)
 
-            origem: str = data.split(" ")[0]
-            tipo = data.split(" ")[2]
-            args = data.split(" ")[3]
+            data = data.split(" ")
+            origem = data[0]
+            tipo = data[2]
+            args = ""
 
-            print(origem, tipo, args)
+            if len(data) == 4:
+                args = data[3]
 
             if(tipo == "HELLO"): hello_req(origem)
 
