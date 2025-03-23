@@ -130,6 +130,12 @@ def listar_peers():
         print("Opção invalida")
         return
 
+def sair():
+    for peer in lista_vizinhos:
+        if peer.STATUS == "ONLINE": envia_mensagem(peer, "BYE")
+    server_thread.join()
+    sys.exit()
+
 if opcao == 1:
     listar_peers()
 elif opcao == 7:
