@@ -4,41 +4,14 @@ import socket
 import threading
 from pathlib import Path
 
-if len(sys.argv) != 4:
-    print("Uso correto: python3 <nome>.py <endereço>:<porta> <vizinhos.txt> <diretório_compartilhado>")
-    sys.exit(1)
-
-IP = sys.argv[1].split(":")[0]
-PORTA = int(sys.argv[1].split(":")[1])
-VIZINHOS = sys.argv[2]
-DIRETORIO = sys.argv[3]
-clock = 0
-
-#Criando o socket TCP conforme especificado em 2.3 EP: parte 1
-server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server.bind((IP, PORTA))
-
-#Parte que adiciona os peers do arquivo vizinhos.txt e apresenta saída solicitada conforme 2.3 EP: parte 1
-class Peer:
-    def __init__(self, IP, PORTA, status):
-        self.IP = IP
-        self.PORTA = PORTA
-        self.STATUS = status
-
+IP: str
+PORTA: int
+VIZINHOS: str
+DIRETORIO: str
+CLOCK: int
 lista_vizinhos = []
 
-with open(VIZINHOS, "r") as arquivo:
-    for linha in arquivo:
-        print(f"Adicionando novo peer {linha} status OFFLINE")
-        lista_vizinhos.append(Peer(linha.split(":")[0], linha.split(":")[1], "OFFLINE"))
-
-#Verifica se o diretório de compartilhamento é um diretório válido e pode ser lido.
-caminho_diretorio = Path(DIRETORIO)
-
-if not caminho_diretorio.is_dir() or not os.access(caminho_diretorio, os.R_OK):
-    print(f"Erro: '{DIRETORIO}' não é um diretório válido ou não pode ser lido.")
-    sys.exit(1)
-
+#----------Funções especificas dos tipos de requisição---------------------------
 def hello_req(new_peer):
     ip = new_peer.split(":")[0]
     porta = int(new_peer.split(":")[1])
@@ -50,7 +23,7 @@ def hello_req(new_peer):
             return
 
     peer = Peer(ip, porta, "ONLINE")
-    print(f"Atualizando peer {peer.IP}:{peer.PORTA} status {peer.STATUS}")
+    print(f"Adicionando novo peer {peer.IP}:{peer.PORTA} status {peer.STATUS}")
     lista_vizinhos.append(peer)
 
 def bye_req(origem):
@@ -60,14 +33,57 @@ def bye_req(origem):
             print(f"Atualizando peer {peer.IP}:{peer.PORTA} status {peer.STATUS}")
             break
 
-#Função que lida com a requisição do cliente
+def get_peers_req(origem):
+    print("")
+#-------------------------------------------------------------
+
+#Função que inicia o servidor
+def inicia_server():
+    server.listen()
+    print(f"Servidor iniciado em {IP}:{PORTA}")
+
+    while True:
+        req, addr = server.accept()
+        cliente_thread = threading.Thread(target=tratar_req, args=(req,))
+        cliente_thread.start()
+
+# Função de enviar mensagem para os peers como especificado em 2.1 - EP: Parte 1
+def envia_mensagem(peer, tipo):
+    global IP, PORTA, VIZINHOS, DIRETORIO, CLOCK
+    msg_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        msg_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        msg_socket.connect((peer.IP, int(peer.PORTA)))
+        # <ORIGEM> <CLOCK> <TIPO> [ARGUMENTO 1 ARGUMENTO 2]
+
+        CLOCK = CLOCK + 1
+
+        mensagem = f"{IP}:{PORTA} {CLOCK} {tipo}"
+        msg_socket.send(mensagem.encode())
+
+        print(f"=> Atualizando relogio para {CLOCK}")
+        print(f"Encaminhando mensagem {mensagem} para {peer.IP}:{peer.PORTA}")
+    except Exception as e:
+        print(f"Erro ao enviar mensagem {e}")
+        peer.STATUS = "OFFLINE"
+    else:
+        peer.STATUS = "ONLINE"
+
+    print(f"Atualizando peer {peer.IP}:{peer.PORTA} status {peer.STATUS}")
+    msg_socket.close()
+
+# Função que lida com a requisição do cliente
 def tratar_req(req):
+    global CLOCK
     while True:
         try:
             data = req.recv(1024).decode()
             if not data:
                 break
             print("Mensagem recebida: ", data)
+
+            CLOCK = CLOCK + 1
+            print("=> Atualizando relogio para ", CLOCK)
 
             data = data.split(" ")
             origem = data[0]
@@ -77,52 +93,16 @@ def tratar_req(req):
             if len(data) == 4:
                 args = data[3]
 
-            if(tipo == "HELLO"): hello_req(origem)
-            elif(tipo == "BYE"): bye_req(origem)
+            if (tipo == "HELLO"):
+                hello_req(origem)
+            elif (tipo == "BYE"):
+                bye_req(origem)
 
         except:
             break
     req.close()
 
-#Função que inicia o servidor
-def inicia_server():
-    server.listen()
-    print(f"Servidor iniciado {IP}:{PORTA}")
-
-    while True:
-        req, addr = server.accept()
-        cliente_thread = threading.Thread(target=tratar_req, args=(req,))
-        cliente_thread.start()
-
-
-server_thread = threading.Thread(target=inicia_server)
-server_thread.daemon = True
-server_thread.start()
-
-threading.Event().wait(1)
-
-opcao = int(input("Escolha um comando:\n [1] Listar peers \n [2] Obter peers \n [3] Listar arquivos locais \n [4] Buscar arquivos \n [5] Exibir estatísticas \n [6] Alterar tamanho de chunk \n [7] Sair \n opcao: "))
-
-# Função de enviar mensagem para os peers como especificado em 2.1 - EP: Parte 1
-def envia_mensagem(peer, tipo):
-    try:
-        peer_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        peer_socket.connect((peer.IP, int(peer.PORTA)))
-        # <ORIGEM> <CLOCK> <TIPO> [ARGUMENTO 1 ARGUMENTO 2]
-        mensagem = f"{IP}:{PORTA} {clock} {tipo}"
-        peer_socket.send(mensagem.encode())
-        print(f"Encaminhando mensagem {mensagem} para {peer.IP}:{peer.PORTA}")
-    except Exception as e:
-        print(f"Erro ao enviar mensagem {e}")
-        peer_socket.close()
-        peer.STATUS = "OFFLINE"
-        print(f"Atualizando peer {peer.IP}:{peer.PORTA} status {peer.STATUS}")
-    else:
-        peer.STATUS = "ONLINE"
-        print(f"Atualizando peer {peer.IP}:{peer.PORTA} status {peer.STATUS}")
-
-    peer_socket.close()
-
+#------------------ Funções do Menu --------------------------
 # Função de listar peers
 def listar_peers():
     print("[0] voltar para o menu anterior")
@@ -139,23 +119,65 @@ def listar_peers():
         print("Opção invalida")
         return
 
+def obter_peers():
+    for peer in lista_vizinhos:
+        envia_mensagem(peer, "GET_PEERS")
+
 def sair():
     for peer in lista_vizinhos:
         if peer.STATUS == "ONLINE": envia_mensagem(peer, "BYE")
     server_thread.join()
     sys.exit()
 
-def obter_peers():
-    for peer in lista_vizinhos:
-        envia_mensagem(peer, "GET_PEERS")
+#-----------------------------------------------------------------------------
+if __name__ == "__main__":
 
+    if len(sys.argv) != 4:
+        print("Uso correto: python3 <nome>.py <endereço>:<porta> <vizinhos.txt> <diretório_compartilhado>")
+        sys.exit(1)
 
-if opcao == 1:
-    listar_peers()
-elif opcao == 7:
-    sair()
+    IP = sys.argv[1].split(":")[0]
+    PORTA = int(sys.argv[1].split(":")[1])
+    VIZINHOS = sys.argv[2]
+    DIRETORIO = sys.argv[3]
+    CLOCK = 0
 
+    # Verifica se o diretório de compartilhamento é um diretório válido e pode ser lido.
+    caminho_diretorio = Path(DIRETORIO)
 
+    if not caminho_diretorio.is_dir() or not os.access(caminho_diretorio, os.R_OK):
+        print(f"Erro: '{DIRETORIO}' não é um diretório válido ou não pode ser lido.")
+        sys.exit(1)
+
+    # Parte que adiciona os peers do arquivo vizinhos.txt e apresenta saída solicitada conforme 2.3 EP: parte 1
+    class Peer:
+        def __init__(self, IP, PORTA, status):
+            self.IP = IP
+            self.PORTA = PORTA
+            self.STATUS = status
+
+    with open(VIZINHOS, "r") as arquivo:
+        for linha in arquivo:
+            print(f"Adicionando novo peer {linha} status OFFLINE")
+            lista_vizinhos.append(Peer(linha.split(":")[0], linha.split(":")[1], "OFFLINE"))
+
+    # Criando o socket TCP conforme especificado em 2.3 EP: parte 1
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.bind((IP, PORTA))
+
+    #Inicia o servidor
+    server_thread = threading.Thread(target=inicia_server)
+    server_thread.daemon = True
+    server_thread.start()
+
+    threading.Event().wait(1)
+
+    opcao = int(input("Escolha um comando:\n [1] Listar peers \n [2] Obter peers \n [3] Listar arquivos locais \n [4] Buscar arquivos \n [5] Exibir estatísticas \n [6] Alterar tamanho de chunk \n [7] Sair \n opcao: "))
+
+    if opcao == 1:
+        listar_peers()
+    elif opcao == 7:
+        sair()
 
 
 
