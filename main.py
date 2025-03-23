@@ -39,11 +39,23 @@ if not caminho_diretorio.is_dir() or not os.access(caminho_diretorio, os.R_OK):
     print(f"Erro: '{diretorio_compartilhado}' não é um diretório válido ou não pode ser lido.")
     sys.exit(1)
 
+#Função que lida com a requisição do cliente
+def tratar_req(req):
+    while True:
+        try:
+            data = req.recv(1024)
+            if not data:
+                break
+            print("Mensagem recebida: ", data)
+        except:
+            break
+    req.close()
 
 #Função que inicia o servidor
 def inicia_server():
     server.listen()
     print(f"Servidor iniciado {IP}:{PORTA}")
+
 
 server_thread = threading.Thread(target=inicia_server)
 server_thread.daemon = True
