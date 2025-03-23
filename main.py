@@ -53,6 +53,11 @@ def hello_req(new_peer):
     print(f"Atualizando peer {peer.IP}:{peer.PORTA} status {peer.STATUS}")
     lista_vizinhos.append(peer)
 
+def bye_req(origem):
+    for peer in lista_vizinhos:
+        if peer.IP == origem and peer.PORTA == PORTA:
+            peer.STATUS = "OFFLINE"
+            print(f"Atualizando peer {peer.IP}:{peer.PORTA} status {peer.STATUS}")
 
 #Função que lida com a requisição do cliente
 def tratar_req(req):
