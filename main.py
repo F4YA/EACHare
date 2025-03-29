@@ -34,7 +34,20 @@ def bye_req(origem):
             break
 
 def get_peers_req(origem):
-    print("")
+    argumentos = f"{len(lista_vizinhos)} "
+    peer: Peer
+
+    origem = origem.split(":")
+
+    for vizinho in lista_vizinhos:
+        if vizinho.IP == origem[0] and vizinho.PORTA == int(origem[1]):
+            peer = vizinho
+            continue
+        argumentos += f"{vizinho.IP}:{vizinho.PORTA}:{vizinho.STATUS}:0 "
+    envia_mensagem(peer, "PEER_LIST", argumentos)
+
+def peer_list_req(origem, args):
+    pass
 #-------------------------------------------------------------
 
 #Função que inicia o servidor
@@ -48,7 +61,7 @@ def inicia_server():
         cliente_thread.start()
 
 # Função de enviar mensagem para os peers como especificado em 2.1 - EP: Parte 1
-def envia_mensagem(peer, tipo):
+def envia_mensagem(peer, tipo, args = None):
     global IP, PORTA, VIZINHOS, DIRETORIO, CLOCK
     msg_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
@@ -57,8 +70,12 @@ def envia_mensagem(peer, tipo):
         # <ORIGEM> <CLOCK> <TIPO> [ARGUMENTO 1 ARGUMENTO 2]
 
         CLOCK = CLOCK + 1
+        if args is not None:
+            print(f"argumetos {args}")
+            mensagem = f"{IP}:{PORTA} {CLOCK} {tipo} {args}"
+        else:
+            mensagem = f"{IP}:{PORTA} {CLOCK} {tipo}"
 
-        mensagem = f"{IP}:{PORTA} {CLOCK} {tipo}"
         msg_socket.send(mensagem.encode())
 
         print(f"=> Atualizando relogio para {CLOCK}")
@@ -88,16 +105,15 @@ def tratar_req(req):
             data = data.split(" ")
             origem = data[0]
             tipo = data[2]
-            args = ""
 
-            if len(data) == 4:
-                args = data[3]
-
-            if (tipo == "HELLO"):
+            if tipo == "HELLO":
                 hello_req(origem)
-            elif (tipo == "BYE"):
+            elif tipo == "BYE":
                 bye_req(origem)
-
+            elif tipo == "GET_PEERS":
+                get_peers_req(origem)
+            elif tipo == "PEER_LIST":
+                peer_list_req(origem)
         except:
             break
     req.close()
@@ -165,7 +181,7 @@ if __name__ == "__main__":
     with open(VIZINHOS, "r") as arquivo:
         for linha in arquivo:
             print(f"Adicionando novo peer {linha} status OFFLINE")
-            lista_vizinhos.append(Peer(linha.split(":")[0], linha.split(":")[1], "OFFLINE"))
+            lista_vizinhos.append(Peer(linha.split(":")[0], int(linha.split(":")[1]), "OFFLINE"))
 
     # Criando o socket TCP conforme especificado em 2.3 EP: parte 1
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -178,6 +194,7 @@ if __name__ == "__main__":
 
     threading.Event().wait(1)
 
+while True:
     opcao = int(input("Escolha um comando:\n [1] Listar peers \n [2] Obter peers \n [3] Listar arquivos locais \n [4] Buscar arquivos \n [5] Exibir estatísticas \n [6] Alterar tamanho de chunk \n [7] Sair \n opcao: "))
 
     if opcao == 1:
@@ -188,6 +205,7 @@ if __name__ == "__main__":
         listar_arquivos_locais()
     elif opcao == 7:
         sair()
+
 
 
 
