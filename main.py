@@ -35,6 +35,7 @@ def bye_req(origem):
 def get_peers_req(origem):
     argumentos = f"{len(lista_vizinhos)} "
     peer: Peer
+    exists = True
 
     ip, porta = origem.split(":")
     porta = int(porta)
@@ -42,10 +43,13 @@ def get_peers_req(origem):
     for vizinho in lista_vizinhos:
         if vizinho.ip == ip and vizinho.porta == porta:
             peer = vizinho
+            exists = False
             continue
         argumentos += f"{vizinho.ip}:{vizinho.porta}:{vizinho.status}:0 "
 
-    if peer is None or not isinstance(peer, Peer): lista_vizinhos.append(Peer(ip, porta, "ONLINE"))
+    if exists:
+        peer = Peer(ip, porta, "ONLINE")
+        lista_vizinhos.append(peer)
 
     envia_mensagem(peer, "PEER_LIST", argumentos)
 
@@ -206,7 +210,7 @@ if __name__ == "__main__":
     # Parte que adiciona os peers do arquivo vizinhos.txt e apresenta saída solicitada conforme 2.3 EP: parte 1
     class Peer:
         def __init__(self, ip, porta, status):
-            print(f"Adicionando novo peer {IP}:{PORTA} status {status}")
+            print(f"Adicionando novo peer {ip}:{porta} status {status}")
             self.ip = ip
             self.porta = porta
             self.status = status
