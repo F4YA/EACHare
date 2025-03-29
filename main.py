@@ -123,6 +123,12 @@ def obter_peers():
     for peer in lista_vizinhos:
         envia_mensagem(peer, "GET_PEERS")
 
+def listar_arquivos_locais():
+
+    with os.scandir(DIRETORIO) as conteudos:
+        for conteudo in conteudos:
+            print(conteudo.name)
+
 def sair():
     for peer in lista_vizinhos:
         if peer.STATUS == "ONLINE": envia_mensagem(peer, "BYE")
@@ -176,6 +182,10 @@ if __name__ == "__main__":
 
     if opcao == 1:
         listar_peers()
+    elif opcao == 2:
+        obter_peers()
+    elif opcao == 3:
+        listar_arquivos_locais()
     elif opcao == 7:
         sair()
 
