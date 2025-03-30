@@ -178,6 +178,13 @@ def listar_arquivos_locais():
         for conteudo in conteudos:
             print(conteudo.name)
 
+def buscar_arquivos():
+    pass
+def exibir_estatisticas():
+    pass
+def alterar_tamanho_chunk():
+    pass
+
 def sair():
     global encerrar
     encerrar = True
@@ -186,6 +193,7 @@ def sair():
         if peer.status == "ONLINE": envia_mensagem(peer, "BYE")
 
     server.close()
+    sys.exit(0)
 
 #-----------------------------------------------------------------------------
 if __name__ == "__main__":
@@ -235,18 +243,13 @@ if __name__ == "__main__":
 
     threading.Event().wait(1)
 
-while True:
-    opcao = int(input("Escolha um comando:\n [1] Listar peers \n [2] Obter peers \n [3] Listar arquivos locais \n [4] Buscar arquivos \n [5] Exibir estatísticas \n [6] Alterar tamanho de chunk \n [7] Sair \n opcao: "))
 
-    if opcao == 1:
-        listar_peers()
-    elif opcao == 2:
-        obter_peers()
-    elif opcao == 3:
-        listar_arquivos_locais()
-    elif opcao == 7:
-        sair()
-        sys.exit(0)
+funcoes = [listar_peers, obter_peers, listar_arquivos_locais, buscar_arquivos, exibir_estatisticas, alterar_tamanho_chunk, sair]
+while True:
+    opcao = int(input("Escolha um comando:\n [1] Listar peers \n [2] Obter peers \n [3] Listar arquivos locais \n [4] Buscar arquivos \n [5] Exibir estatísticas \n [6] Alterar tamanho de chunk \n [7] Sair \n > "))
+    if opcao in [1, 2, 3, 4, 5, 6, 7]:
+        funcoes[opcao - 1]()
+    else: print("Opção invalida")
 
 
 
