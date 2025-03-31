@@ -108,9 +108,9 @@ def envia_mensagem(peer, tipo, args = None):
         print(f"Encaminhando mensagem \"{mensagem}\" para {peer.ip}:{peer.porta}")
     except Exception as e:
         print(f"Erro ao enviar mensagem {e}")
-        peer.status = "OFFLINE"
+        peer.att_status("OFFLINE")
     else:
-        peer.status = "ONLINE"
+        peer.att_status("ONLINE")
 
     msg_socket.close()
 
@@ -185,6 +185,11 @@ def exibir_estatisticas():
 def alterar_tamanho_chunk():
     pass
 
+def adicionar_novos_peers_arquivo():
+    with open(VIZINHOS, "w") as arquivo:
+        for peer in lista_vizinhos:
+            arquivo.write(f"{peer.ip}:{peer.porta}\n")
+
 def sair():
     global encerrar
     encerrar = True
@@ -193,6 +198,7 @@ def sair():
         if peer.status == "ONLINE": envia_mensagem(peer, "BYE")
 
     server.close()
+    adicionar_novos_peers_arquivo()
     sys.exit(0)
 
 #-----------------------------------------------------------------------------
