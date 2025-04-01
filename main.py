@@ -21,7 +21,7 @@ def hello_req(new_peer):
         if peer.ip == ip and peer.porta == porta:
             peer.att_status("ONLINE")
             return
-    lista_vizinhos.append(Peer(ip, porta, "ONLINE"))
+    lista_vizinhos.append(Peer(ip, porta, "ONLINE").armazenar())
 
 def bye_req(origem):
     ip, porta = origem.split(":")
@@ -35,7 +35,7 @@ def bye_req(origem):
 def get_peers_req(origem):
     argumentos = f"{len(lista_vizinhos)} "
     peer: Peer
-    exists = True
+    exists = False
 
     ip, porta = origem.split(":")
     porta = int(porta)
@@ -43,12 +43,12 @@ def get_peers_req(origem):
     for vizinho in lista_vizinhos:
         if vizinho.ip == ip and vizinho.porta == porta:
             peer = vizinho
-            exists = False
+            exists = True
             continue
         argumentos += f"{vizinho.ip}:{vizinho.porta}:{vizinho.status}:0 "
 
-    if exists:
-        peer = Peer(ip, porta, "ONLINE")
+    if not exists:
+        peer = Peer(ip, porta, "ONLINE").armazenar()
         lista_vizinhos.append(peer)
 
     envia_mensagem(peer, "PEER_LIST", argumentos)
@@ -66,7 +66,7 @@ def peer_list_req(origem, args):
                 break
 
         if exists: continue
-        lista_vizinhos.append(Peer(ip, int(porta), status))
+        lista_vizinhos.append(Peer(ip, int(porta), status).armazenar())
 
 #-------------------------------------------------------------
 
@@ -219,10 +219,6 @@ if __name__ == "__main__":
     class Peer:
         def __init__(self, ip, porta, status):
             print(f"Adicionando novo peer {ip}:{porta} status {status}")
-
-            with open(VIZINHOS, "a") as arquivo:
-                arquivo.write(f"{ip}:{porta}\n")
-
             self.ip = ip
             self.porta = porta
             self.status = status
@@ -230,6 +226,12 @@ if __name__ == "__main__":
         def att_status(self, status):
             self.status = status
             print(f"Atualizando peer {self.ip}:{self.porta} status {self.status}")
+
+        def armazenar(self):
+            with open(VIZINHOS, "a") as arquivo:
+                arquivo.write(f"{self.ip}:{self.porta}\n")
+
+            return self
 
     with open(VIZINHOS, "r") as arquivo:
         for linha in arquivo:
@@ -246,7 +248,6 @@ if __name__ == "__main__":
     server_thread.start()
 
     threading.Event().wait(1)
-
 
 funcoes = [listar_peers, obter_peers, listar_arquivos_locais, buscar_arquivos, exibir_estatisticas, alterar_tamanho_chunk, sair]
 while True:
