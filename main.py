@@ -185,11 +185,6 @@ def exibir_estatisticas():
 def alterar_tamanho_chunk():
     pass
 
-def adicionar_novos_peers_arquivo():
-    with open(VIZINHOS, "w") as arquivo:
-        for peer in lista_vizinhos:
-            arquivo.write(f"{peer.ip}:{peer.porta}\n")
-
 def sair():
     global encerrar
     encerrar = True
@@ -198,7 +193,6 @@ def sair():
         if peer.status == "ONLINE": envia_mensagem(peer, "BYE")
 
     server.close()
-    adicionar_novos_peers_arquivo()
     sys.exit(0)
 
 #-----------------------------------------------------------------------------
@@ -225,6 +219,10 @@ if __name__ == "__main__":
     class Peer:
         def __init__(self, ip, porta, status):
             print(f"Adicionando novo peer {ip}:{porta} status {status}")
+
+            with open(VIZINHOS, "a") as arquivo:
+                arquivo.write(f"{ip}:{porta}\n")
+
             self.ip = ip
             self.porta = porta
             self.status = status
