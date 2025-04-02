@@ -92,8 +92,6 @@ def envia_mensagem(peer, tipo, args = None):
     msg_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     try:
-        msg_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        msg_socket.connect((peer.ip, int(peer.porta)))
         # <ORIGEM> <CLOCK> <TIPO> [ARGUMENTO 1 ARGUMENTO 2]
         CLOCK = CLOCK + 1
 
@@ -102,12 +100,14 @@ def envia_mensagem(peer, tipo, args = None):
         else:
             mensagem = f"{IP}:{PORTA} {CLOCK} {tipo}"
 
-        msg_socket.send(f"{mensagem + '\n'}".encode())
-
         print(f"=> Atualizando relogio para {CLOCK}")
         print(f"Encaminhando mensagem \"{mensagem}\" para {peer.ip}:{peer.porta}")
+
+        msg_socket.connect((peer.ip, int(peer.porta)))
+        msg_socket.send(f"{mensagem + '\n'}".encode())
+
     except Exception as e:
-        print(f"Erro ao enviar mensagem {e}")
+        #print(f"Erro ao enviar mensagem {e}")
         peer.att_status("OFFLINE")
     else:
         peer.att_status("ONLINE")
@@ -189,6 +189,8 @@ def sair():
     global encerrar
     encerrar = True
 
+    print("Saindo...\n")
+
     for peer in lista_vizinhos:
         if peer.status == "ONLINE": envia_mensagem(peer, "BYE")
 
@@ -235,7 +237,8 @@ if __name__ == "__main__":
 
     with open(VIZINHOS, "r") as arquivo:
         for linha in arquivo:
-            ip, porta = linha.split(":")
+            if linha.isspace(): continue #ignora linhas em branco
+            ip, porta = linha.strip().split(":")
             lista_vizinhos.append(Peer(ip, int(porta), "OFFLINE"))
 
     # Criando o socket TCP conforme especificado em 2.3 EP: parte 1
