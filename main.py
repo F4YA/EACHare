@@ -124,12 +124,18 @@ def tratar_req(req):
     while True:
         try:
             data = req.recv(1024).decode()
+
             if not data:
                 break
 
             args = data.split("\n")
 
+
             args = args[0].strip().split(" ")
+
+            relogio_viz = int(args[1])
+            CLOCK = max(CLOCK, relogio_viz)
+            CLOCK = CLOCK + 1
 
             origem = args.pop(0)
             tipo = args.pop(1)
