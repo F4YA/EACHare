@@ -21,7 +21,7 @@ def hello_req(new_peer):
         if peer.ip == ip and peer.porta == porta:
             peer.att_status("ONLINE")
             return
-    lista_vizinhos.append(Peer(ip, porta, "ONLINE").armazenar())
+    lista_vizinhos.append(Peer(ip, porta, "ONLINE"))
 
 def bye_req(origem):
     ip, porta = origem.split(":")
@@ -48,7 +48,7 @@ def get_peers_req(origem):
         argumentos += f"{vizinho.ip}:{vizinho.porta}:{vizinho.status}:0 "
 
     if not exists:
-        peer = Peer(ip, porta, "ONLINE").armazenar()
+        peer = Peer(ip, porta, "ONLINE")
         lista_vizinhos.append(peer)
 
     envia_mensagem(peer, "PEER_LIST", argumentos)
@@ -66,7 +66,7 @@ def peer_list_req(origem, args):
                 break
 
         if exists: continue
-        lista_vizinhos.append(Peer(ip, int(porta), status).armazenar())
+        lista_vizinhos.append(Peer(ip, int(porta), status))
 
 #-------------------------------------------------------------
 
@@ -231,11 +231,11 @@ if __name__ == "__main__":
             self.status = status
             print(f"Atualizando peer {self.ip}:{self.porta} status {self.status}")
 
-        def armazenar(self):
-            with open(VIZINHOS, "a") as arquivo:
-                arquivo.write(f"{self.ip}:{self.porta}\n")
-
-            return self
+        # def armazenar(self):
+        #     with open(VIZINHOS, "a") as arquivo:
+        #         arquivo.write(f"{self.ip}:{self.porta}\n")
+        #
+        #     return self
 
     with open(VIZINHOS, "r") as arquivo:
         for linha in arquivo:
