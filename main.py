@@ -106,6 +106,10 @@ def envia_mensagem(peer, tipo, args = None):
         msg_socket.connect((peer.ip, int(peer.porta)))
         msg_socket.send(f"{mensagem + '\n'}".encode())
 
+        if tipo == "BYE":
+            msg_socket.close()
+            return
+
     except Exception as e:
         #print(f"Erro ao enviar mensagem {e}")
         peer.att_status("OFFLINE")
@@ -122,8 +126,6 @@ def tratar_req(req):
             data = req.recv(1024).decode()
             if not data:
                 break
-
-            CLOCK = CLOCK + 1
 
             args = data.split("\n")
 
@@ -239,6 +241,7 @@ if __name__ == "__main__":
         for linha in arquivo:
             if linha.isspace(): continue #ignora linhas em branco
             ip, porta = linha.strip().split(":")
+            if ip == IP and int(porta) == PORTA: continue
             lista_vizinhos.append(Peer(ip, int(porta), "OFFLINE"))
 
     # Criando o socket TCP conforme especificado em 2.3 EP: parte 1
@@ -252,10 +255,10 @@ if __name__ == "__main__":
 
     threading.Event().wait(1)
 
-funcoes = [listar_peers, obter_peers, listar_arquivos_locais, buscar_arquivos, exibir_estatisticas, alterar_tamanho_chunk, sair]
+funcoes = [listar_peers, obter_peers, listar_arquivos_locais, buscar_arquivos, exibir_estatisticas, alterar_tamanho_chunk, '', '', sair]
 while True:
-    opcao = int(input("Escolha um comando:\n [1] Listar peers \n [2] Obter peers \n [3] Listar arquivos locais \n [4] Buscar arquivos \n [5] Exibir estatísticas \n [6] Alterar tamanho de chunk \n [7] Sair \n > "))
-    if opcao in [1, 2, 3, 4, 5, 6, 7]:
+    opcao = int(input("Escolha um comando:\n [1] Listar peers \n [2] Obter peers \n [3] Listar arquivos locais \n [4] Buscar arquivos \n [5] Exibir estatísticas \n [6] Alterar tamanho de chunk \n [9] Sair \n > "))
+    if opcao in [1, 2, 3, 4, 5, 6, 9]:
         funcoes[opcao - 1]()
     else: print("Opção invalida")
 
