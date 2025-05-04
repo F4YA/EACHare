@@ -13,26 +13,28 @@ lista_vizinhos = []
 encerrar = False
 
 #----------Funções especificas dos tipos de requisição---------------------------
-def hello_req(new_peer):
+def hello_req(new_peer, relogio_viz):
     ip, porta = new_peer.split(":")
     porta = int(porta)
 
     for peer in lista_vizinhos:
         if peer.ip == ip and peer.porta == porta:
             peer.att_status("ONLINE")
+            peer.att_clock(relogio_viz)
             return
-    lista_vizinhos.append(Peer(ip, porta, "ONLINE"))
+    lista_vizinhos.append(Peer(ip, porta, "ONLINE", relogio_viz))
 
-def bye_req(origem):
+def bye_req(origem, relogio_viz):
     ip, porta = origem.split(":")
     porta = int(porta)
 
     for peer in lista_vizinhos:
         if peer.ip == ip and peer.porta == porta:
             peer.att_status("OFFLINE")
+            peer.att_clock(relogio_viz)
             break
 
-def get_peers_req(origem):
+def get_peers_req(origem, relogio_viz):
     argumentos = f"{len(lista_vizinhos)} "
     peer: Peer
     exists = False
@@ -45,28 +47,36 @@ def get_peers_req(origem):
             peer = vizinho
             exists = True
             continue
-        argumentos += f"{vizinho.ip}:{vizinho.porta}:{vizinho.status}:0 "
+        argumentos += f"{vizinho.ip}:{vizinho.porta}:{vizinho.status}:{vizinho.clock} "
 
     if not exists:
-        peer = Peer(ip, porta, "ONLINE")
+        peer = Peer(ip, porta, "ONLINE", relogio_viz)
         lista_vizinhos.append(peer)
 
     envia_mensagem(peer, "PEER_LIST", argumentos)
 
-def peer_list_req(origem, args):
+def peer_list_req(origem, relogio_viz, args):
+    ip_origem, porta_origen = origem.split(":")
+    for vizinho in lista_vizinhos:
+        if vizinho.ip == ip_origem and vizinho.porta == int(porta_origen):
+            vizinho.att_clock(relogio_viz)
+            break
+
     for peer in args:
-        ip, porta, status, x = peer.split(":")
+        ip, porta, status, relogio = peer.split(":")
         porta = int(porta)
+        relogio = int(relogio)
         exists = False
 
         for vizinho in lista_vizinhos:
             if vizinho.ip == ip and vizinho.porta == porta:
                 vizinho.att_status(status)
+                vizinho.att_clock(relogio)
                 exists = True
                 break
 
         if exists: continue
-        lista_vizinhos.append(Peer(ip, int(porta), status))
+        lista_vizinhos.append(Peer(ip, int(porta), status, relogio))
 
 #-------------------------------------------------------------
 
@@ -146,15 +156,15 @@ def tratar_req(req):
             print("=> Atualizando relogio para ", CLOCK)
 
             if tipo == "HELLO":
-                hello_req(origem)
+                hello_req(origem, relogio_viz)
             elif tipo == "BYE":
-                bye_req(origem)
+                bye_req(origem, relogio_viz)
             elif tipo == "GET_PEERS":
-                get_peers_req(origem)
+                get_peers_req(origem, relogio_viz)
             elif tipo == "PEER_LIST":
-                args.pop(0)  # remove o clock da mensagem
+                relogio_viz = args.pop(0)  # remove o clock da mensagem
                 args.pop(0)  # remove a quantidade de peers
-                peer_list_req(origem, args)
+                peer_list_req(origem, relogio_viz, args)
         except:
             break
     req.close()
@@ -227,15 +237,18 @@ if __name__ == "__main__":
 
     # Parte que adiciona os peers do arquivo vizinhos.txt e apresenta saída solicitada conforme 2.3 EP: parte 1
     class Peer:
-        def __init__(self, ip, porta, status):
+        def __init__(self, ip, porta, status, clock):
             print(f"Adicionando novo peer {ip}:{porta} status {status}")
             self.ip = ip
             self.porta = porta
             self.status = status
+            self.clock = int(clock)
 
         def att_status(self, status):
             self.status = status
             print(f"Atualizando peer {self.ip}:{self.porta} status {self.status}")
+        def att_clock(self, clock):
+            self.clock = max(self.clock, int(clock))
 
         # def armazenar(self):
         #     with open(VIZINHOS, "a") as arquivo:
@@ -248,7 +261,7 @@ if __name__ == "__main__":
             if linha.isspace(): continue #ignora linhas em branco
             ip, porta = linha.strip().split(":")
             if ip == IP and int(porta) == PORTA: continue
-            lista_vizinhos.append(Peer(ip, int(porta), "OFFLINE"))
+            lista_vizinhos.append(Peer(ip, int(porta), "OFFLINE", 0))
 
     # Criando o socket TCP conforme especificado em 2.3 EP: parte 1
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
