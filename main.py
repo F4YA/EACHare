@@ -77,7 +77,20 @@ def peer_list_req(origem, relogio_viz, args):
 
         if exists: continue
         lista_vizinhos.append(Peer(ip, int(porta), status, relogio))
+def ls_req(origem, relogio_viz):
+    ip_origem, porta_origem = origem.split(":")
+    porta_origem = int(porta_origem)
+    args = ""
 
+    with os.scandir(DIRETORIO) as arquivos:
+        args += f"{len(arquivos)}"
+        for arquivo in arquivos:
+            arq_sz = os.path.getsize(arquivo.path)
+            args += f"{arquivo.name}:{arq_sz} "
+
+    for peer in lista_vizinhos:
+        if peer.ip == ip_origem and peer.porta == porta_origem:
+            envia_mensagem(peer, "LS_LIST", args)
 #-------------------------------------------------------------
 
 #Função que inicia o servidor
@@ -139,8 +152,6 @@ def tratar_req(req):
                 break
 
             args = data.split("\n")
-
-
             args = args[0].strip().split(" ")
 
             relogio_viz = int(args[1])
@@ -165,6 +176,9 @@ def tratar_req(req):
                 relogio_viz = args.pop(0)  # remove o clock da mensagem
                 args.pop(0)  # remove a quantidade de peers
                 peer_list_req(origem, relogio_viz, args)
+            elif tipo == "LS":
+                relogio_viz = args.pop(0)
+                ls_req(origem, relogio_viz)
         except:
             break
     req.close()
@@ -191,13 +205,15 @@ def obter_peers():
         envia_mensagem(peer, "GET_PEERS")
 
 def listar_arquivos_locais():
-
     with os.scandir(DIRETORIO) as conteudos:
         for conteudo in conteudos:
             print(conteudo.name)
 
 def buscar_arquivos():
-    pass
+    for peer in lista_vizinhos:
+        if peer.status == "ONLINE":
+            envia_mensagem(peer, "LS")
+
 def exibir_estatisticas():
     pass
 def alterar_tamanho_chunk():
